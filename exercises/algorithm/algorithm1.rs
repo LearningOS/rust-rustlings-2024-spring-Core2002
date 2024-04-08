@@ -2,11 +2,8 @@
 	single linked list merge
 	This problem requires you to merge two ordered singly linked lists into one ordered singly linked list
 */
-// I AM NOT DONE
-
 use std::fmt::{self, Display, Formatter};
 use std::ptr::NonNull;
-use std::vec::*;
 
 #[derive(Debug)]
 struct Node<T> {
@@ -29,13 +26,13 @@ struct LinkedList<T> {
     end: Option<NonNull<Node<T>>>,
 }
 
-impl<T> Default for LinkedList<T> {
+impl<T: std::cmp::PartialOrd> Default for LinkedList<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T> LinkedList<T> {
+impl<T: std::cmp::PartialOrd> LinkedList<T> {
     pub fn new() -> Self {
         Self {
             length: 0,
@@ -69,15 +66,47 @@ impl<T> LinkedList<T> {
             },
         }
     }
-	pub fn merge(list_a:LinkedList<T>,list_b:LinkedList<T>) -> Self
-	{
-		//TODO
-		Self {
-            length: 0,
-            start: None,
-            end: None,
+    pub fn merge(list_a: LinkedList<T>, list_b: LinkedList<T>) -> Self {
+        let (longer, shorter) = if list_a.length >= list_b.length {
+            (list_a, list_b)
+        } else {
+            (list_b, list_a)
+        };
+
+        let mut longer = longer;
+        let mut shorter = shorter;
+
+        unsafe {
+            longer
+                .end
+                .as_mut()
+                .unwrap()
+                .as_mut()
+                .next
+                .replace(shorter.start.unwrap());
         }
-	}
+
+        longer.end = shorter.end;
+        longer.length = longer.length + shorter.length;
+
+        // sort
+        let mut current = longer.start;
+        let mut next = None;
+        while let Some(mut node) = current {
+            unsafe {
+                next = node.as_mut().next;
+                while let Some(mut node2) = next {
+                    if node.as_ref().val > node2.as_ref().val {
+                        std::mem::swap(&mut node.as_mut().val, &mut node2.as_mut().val);
+                    }
+                    next = node2.as_mut().next;
+                }
+                current = node.as_mut().next
+            }
+        }
+
+        longer
+    }
 }
 
 impl<T> Display for LinkedList<T>
